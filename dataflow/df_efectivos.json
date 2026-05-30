@@ -1,5 +1,5 @@
 {
-	"name": "dataflow1",
+	"name": "df_efectivos",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
@@ -103,18 +103,18 @@
 				"derivedColumn2 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
-				"          id_efectivo as string,",
-				"          id_especialidad as string,",
-				"          id_unidad_actual as string,",
-				"          id_rango_actual as string,",
+				"          id_efectivo as integer,",
+				"          id_especialidad as integer,",
+				"          id_unidad_actual as integer,",
+				"          id_rango_actual as integer,",
 				"          nombre as string,",
 				"          ci as string,",
-				"          fecha_nacimiento as string,",
+				"          fecha_nacimiento as date,",
 				"          genero as string,",
 				"          departamento_origen as string,",
-				"          fecha_ingreso as string,",
+				"          fecha_ingreso as date,",
 				"          estado as string,",
-				"          salario_mensual as string",
+				"          salario_mensual as decimal(18,2)",
 				"     ),",
 				"     deletable:false,",
 				"     insertable:true,",
@@ -134,7 +134,9 @@
 				"          fecha_nacimiento,",
 				"          genero,",
 				"          departamento_origen,",
-				"          estado",
+				"          fecha_ingreso,",
+				"          estado,",
+				"          salario_mensual",
 				"     )) ~> sink1"
 			]
 		}
