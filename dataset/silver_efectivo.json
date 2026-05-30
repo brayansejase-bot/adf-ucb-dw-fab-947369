@@ -61,7 +61,7 @@
 			}
 		],
 		"typeProperties": {
-			"schema": "bronze",
+			"schema": "silver",
 			"table": "tbl_efectivos"
 		}
 	}
