@@ -1,0 +1,142 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "bronze_efectivo",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "silver_efectivo",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id_efectivo as integer,",
+				"          id_especialidad as integer,",
+				"          id_unidad_actual as integer,",
+				"          id_rango_actual as integer,",
+				"          nombre as string,",
+				"          ci as string,",
+				"          fecha_nacimiento as string,",
+				"          genero as string,",
+				"          departamento_origen as string,",
+				"          fecha_ingreso as string,",
+				"          estado as string,",
+				"          salario_mensual as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT\\n    id_efectivo         AS id_efectivo,\\n    id_especialidad     AS id_especialidad,\\n    id_unidad_actual    AS id_unidad_actual,\\n    id_rango_actual     AS id_rango_actual,\\n    TRIM(nombre)              AS nombre,\\n    TRIM(ci)                  AS ci,\\n    TRIM(fecha_nacimiento)    AS fecha_nacimiento,\\n    TRIM(genero)              AS genero,\\n    TRIM(departamento_origen) AS departamento_origen,\\n    TRIM(fecha_ingreso)       AS fecha_ingreso,\\n    TRIM(estado)              AS estado,\\n    TRIM(salario_mensual)     AS salario_mensual\\nFROM oltp.tbl_efectivos\\nWHERE id_efectivo IS NOT NULL AND id_efectivo <> \\'\\'',",
+				"     format: 'query') ~> source1",
+				"source1 derive(ci = regexReplace(trim(ci), '[^0-9a-zA-Z]', ''),",
+				"          nombre = initCap(regexReplace(trim(nombre), '[\\\\\\\\#]', '')),",
+				"          fecha_nacimiento = coalesce(\r",
+				"    toDate(fecha_nacimiento, 'dd-MM-yyyy'),\r",
+				"    toDate(fecha_nacimiento, 'yyyy/MM/dd'),\r",
+				"    toDate(fecha_nacimiento, 'dd/MM/yyyy'),\r",
+				"    toDate(fecha_nacimiento, 'yyyyMMdd'),\r",
+				"    toDate(fecha_nacimiento, 'MM-dd-yyyy'),\r",
+				"    toDate(fecha_nacimiento, 'yyyy-MM-dd')\r",
+				"),",
+				"          genero = case(\r",
+				"    in(['masculino','hombre','masc.','masc','m'], lower(trim(genero))), 'Masculino',\r",
+				"    in(['femenino','mujer','fem.','fem','f'], lower(trim(genero))), 'Femenino',\r",
+				"    'No especificado'\r",
+				"),",
+				"          departamento_origen = case(\r",
+				"    in(['la paz','l.p.','lp','la  paz'], lower(trim(departamento_origen))), 'La Paz',\r",
+				"    in(['cochabamba','cbba','cbba.','cbba '], lower(trim(departamento_origen))), 'Cochabamba',\r",
+				"    in(['santa cruz','scz','sc'], lower(trim(departamento_origen))), 'Santa Cruz',\r",
+				"    in(['oruro','or','or.'], lower(trim(departamento_origen))), 'Oruro',\r",
+				"    in(['tarija','tj','tar'], lower(trim(departamento_origen))), 'Tarija',\r",
+				"    in(['potosi','pt','pot'], lower(trim(departamento_origen))), 'Potosi',\r",
+				"    in(['beni','bn'], lower(trim(departamento_origen))), 'Beni',\r",
+				"    in(['pando','pd'], lower(trim(departamento_origen))), 'Pando',\r",
+				"    in(['chuquisaca','chu','sucre'], lower(trim(departamento_origen))), 'Chuquisaca',\r",
+				"    initCap(trim(departamento_origen))\r",
+				"),",
+				"          fecha_ingreso = coalesce(\r",
+				"    toDate(fecha_ingreso, 'dd-MM-yyyy'),\r",
+				"    toDate(fecha_ingreso, 'yyyy/MM/dd'),\r",
+				"    toDate(fecha_ingreso, 'dd/MM/yyyy'),\r",
+				"    toDate(fecha_ingreso, 'yyyyMMdd'),\r",
+				"    toDate(fecha_ingreso, 'yyyy-MM-dd')\r",
+				"),",
+				"          estado = case(\r",
+				"    in(['activo','act','activo.','en actividad','r'], lower(trim(estado))), 'Activo',\r",
+				"    in(['baja','dado de baja','inactivo'], lower(trim(estado))), 'Baja',\r",
+				"    initCap(trim(estado))\r",
+				"),",
+				"          salario_mensual = toDecimal(\r",
+				"    replace(\r",
+				"        regexReplace(\r",
+				"            regexReplace(trim(salario_mensual), '[Bb][Ss]', ''),\r",
+				"        ' ', ''),\r",
+				"    ',', '.')\r",
+				")) ~> derivedColumn1",
+				"derivedColumn1 derive(ci = regexReplace(trim(ci), '[^0-9]', ''),",
+				"          fecha_ingreso = iifNull(fecha_ingreso, toDate('1900-01-01', 'yyyy-MM-dd'), fecha_ingreso),",
+				"          estado = case(     in(['activo','act','act.','actv','a','en actividad'], lower(trim(estado))), 'Activo',     in(['baja','bja','dado de baja'], lower(trim(estado))), 'Baja',     in(['reserva','rsv','en reserva','r'], lower(trim(estado))), 'Reserva',     in(['sindato','sin dato','nd'], lower(trim(estado))), 'Sin Dato',     initCap(trim(estado)) ),",
+				"          salario_mensual = iifNull(toDecimal(salario_mensual), 0.0, toDecimal(salario_mensual)),",
+				"          departamento_origen = case(     in(['lapaz','la  paz'], lower(trim(departamento_origen))), 'La Paz',     in(['sta cruz','sta. cruz'], lower(trim(departamento_origen))), 'Santa Cruz',     in(['bn.','bn'], lower(trim(departamento_origen))), 'Beni',     departamento_origen )) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id_efectivo as string,",
+				"          id_especialidad as string,",
+				"          id_unidad_actual as string,",
+				"          id_rango_actual as string,",
+				"          nombre as string,",
+				"          ci as string,",
+				"          fecha_nacimiento as string,",
+				"          genero as string,",
+				"          departamento_origen as string,",
+				"          fecha_ingreso as string,",
+				"          estado as string,",
+				"          salario_mensual as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          id_efectivo,",
+				"          id_especialidad,",
+				"          id_unidad_actual,",
+				"          id_rango_actual,",
+				"          nombre,",
+				"          ci,",
+				"          fecha_nacimiento,",
+				"          genero,",
+				"          departamento_origen,",
+				"          estado",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
