@@ -1,0 +1,121 @@
+{
+	"name": "df_movimientos_personal",
+	"properties": {
+		"folder": {
+			"name": "silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "bronze_movimientos_personal",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "silver_movimientos_personal",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id_movimiento as integer,",
+				"          id_efectivo as integer,",
+				"          id_unidad_destino as integer,",
+				"          id_rango as integer,",
+				"          id_tipo as integer,",
+				"          fecha_movimiento as string,",
+				"          antiguedad_anios as string,",
+				"          salario_mensual as string,",
+				"          observaciones as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT\\r\\n    id_movimiento     AS id_movimiento,\\r\\n    id_efectivo       AS id_efectivo,\\r\\n    id_unidad_destino AS id_unidad_destino,\\r\\n    id_rango          AS id_rango,\\r\\n    id_tipo           AS id_tipo,\\r\\n    TRIM(fecha_movimiento)  AS fecha_movimiento,\\r\\n    TRIM(antiguedad_anios)  AS antiguedad_anios,\\r\\n    TRIM(salario_mensual)   AS salario_mensual,\\r\\n    TRIM(observaciones)     AS observaciones\\r\\nFROM oltp.tbl_movimientos_personal\\r\\nWHERE id_movimiento IS NOT NULL AND id_movimiento <> \\'\\'',",
+				"     format: 'query') ~> source1",
+				"source1 derive(fecha_movimiento = coalesce(     toDate(fecha_movimiento, 'yyyy/MM/dd'),     toDate(fecha_movimiento, 'dd-MM-yyyy'),     toDate(fecha_movimiento, 'MM-dd-yyyy'),     toDate(fecha_movimiento, 'dd/MM/yyyy'),     toDate(fecha_movimiento, 'yyyyMMdd'),     toDate(fecha_movimiento, 'yyyy-MM-dd') ),",
+				"          antiguedad_anios = case(\r",
+				"    in(['cero años','cero','0 a.','0,0 años','0.0 años'], lower(trim(antiguedad_anios))), 0,\r",
+				"    in(['un año','uno','1 a.','1 años'], lower(trim(antiguedad_anios))), 1,\r",
+				"    in(['dos años','dos','2 a.','2 años'], lower(trim(antiguedad_anios))), 2,\r",
+				"    in(['tres años','tres','3 a.','3 años'], lower(trim(antiguedad_anios))), 3,\r",
+				"    in(['cuatro años','cuatro','4 a.','4,0 años','4 años'], lower(trim(antiguedad_anios))), 4,\r",
+				"    in(['cinco años','cinco','5 a.','5 años'], lower(trim(antiguedad_anios))), 5,\r",
+				"    in(['seis años','seis','6 a.','6 años'], lower(trim(antiguedad_anios))), 6,\r",
+				"    in(['siete años','siete','7 a.','7 años'], lower(trim(antiguedad_anios))), 7,\r",
+				"    in(['ocho años','ocho','8 a.','8 años'], lower(trim(antiguedad_anios))), 8,\r",
+				"    in(['nueve años','nueve','9 a.','9 años'], lower(trim(antiguedad_anios))), 9,\r",
+				"    in(['diez años','diez','10 a.','10 años'], lower(trim(antiguedad_anios))), 10,\r",
+				"    in(['once años','once','11 a.','11 años'], lower(trim(antiguedad_anios))), 11,\r",
+				"    in(['doce años','doce','12 a.','12 años'], lower(trim(antiguedad_anios))), 12,\r",
+				"    in(['trece años','trece','13 a.','13 años'], lower(trim(antiguedad_anios))), 13,\r",
+				"    in(['catorce años','catorce','14 a.','14 años'], lower(trim(antiguedad_anios))), 14,\r",
+				"    in(['quince años','quince','15 a.','15 años'], lower(trim(antiguedad_anios))), 15,\r",
+				"    in(['dieciséis años','dieciséis','16 a.'], lower(trim(antiguedad_anios))), 16,\r",
+				"    in(['diecisiete años','diecisiete','17 a.'], lower(trim(antiguedad_anios))), 17,\r",
+				"    in(['dieciocho años','dieciocho','18 a.'], lower(trim(antiguedad_anios))), 18,\r",
+				"    in(['diecinueve años','diecinueve','19 a.'], lower(trim(antiguedad_anios))), 19,\r",
+				"    in(['veinte años','veinte','20 a.','20 años'], lower(trim(antiguedad_anios))), 20,\r",
+				"    in(['veintiún años','veintiun','21 a.'], lower(trim(antiguedad_anios))), 21,\r",
+				"    in(['veintidós años','veintidós','veintidos','22 a.'], lower(trim(antiguedad_anios))), 22,\r",
+				"    in(['veintitrés años','veintitres','23 a.'], lower(trim(antiguedad_anios))), 23,\r",
+				"    in(['veinticuatro años','veinticuatro','24 a.'], lower(trim(antiguedad_anios))), 24,\r",
+				"    in(['veinticinco años','veinticinco','25 a.'], lower(trim(antiguedad_anios))), 25,\r",
+				"    startsWith(lower(trim(antiguedad_anios)), 'aprox.'), toInteger(trim(replace(lower(trim(antiguedad_anios)), 'aprox.', ''))),\r",
+				"    toInteger(toDecimal(regexReplace(replace(lower(trim(antiguedad_anios)), ',', '.'), '[^0-9.]', '')))\r",
+				"),",
+				"          salario_mensual = toDecimal(\r",
+				"    replace(\r",
+				"        replace(\r",
+				"            regexReplace(trim(salario_mensual), '[Bb][Ss]', ''),\r",
+				"        '.', ''),\r",
+				"    ',', '.')\r",
+				"),",
+				"          observaciones = iif(\r",
+				"    isNull(trim(observaciones)) || trim(observaciones) == '' || in(['n/a', 'sin observaciones', 'sin obs.', 'sin obs', 's/n'], lower(trim(observaciones))),\r",
+				"    toString(null()),\r",
+				"    lower(trim(observaciones))\r",
+				")) ~> derivedColumn1",
+				"derivedColumn1 derive(salario_mensual = iifNull(toDecimal(salario_mensual), 0.0, toDecimal(salario_mensual))) ~> derivedColumn2",
+				"derivedColumn2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id_movimiento as integer,",
+				"          id_efectivo as integer,",
+				"          id_unidad_destino as integer,",
+				"          id_rango as integer,",
+				"          id_tipo as integer,",
+				"          fecha_movimiento as date,",
+				"          antiguedad_anios as integer,",
+				"          salario_mensual as decimal(18,2),",
+				"          monto_impacto_salarial as decimal(21,2),",
+				"          observaciones as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+			]
+		}
+	}
+}

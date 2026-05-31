@@ -1,9 +1,9 @@
 {
-	"name": "pipeline_silver_efectivo",
+	"name": "pipeline_silver_especialidades",
 	"properties": {
 		"activities": [
 			{
-				"name": "df_efectivos",
+				"name": "df_especialidades",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "df_efectivos",
+						"referenceName": "df_especialidades",
 						"type": "DataFlowReference"
 					},
 					"compute": {

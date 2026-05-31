@@ -1,0 +1,124 @@
+{
+	"name": "df_operacion",
+	"properties": {
+		"folder": {
+			"name": "silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "bronze_operaciones",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "derivedColumn3"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id_operacion as integer,",
+				"          id_tipo as integer,",
+				"          id_unidad_resp as integer,",
+				"          id_zona as integer,",
+				"          nombre_operacion as string,",
+				"          fecha_inicio as string,",
+				"          fecha_fin as string,",
+				"          efectivos_desplegados as string,",
+				"          vehiculos_utilizados as string,",
+				"          duracion_dias as string,",
+				"          costo_operacion as string,",
+				"          resultado as string,",
+				"          detenidos as string,",
+				"          area_km2 as string,",
+				"          incidentes as string,",
+				"          observaciones as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT\\n    id_operacion          AS id_operacion,\\n    id_tipo               AS id_tipo,\\n    id_unidad_resp        AS id_unidad_resp,\\n    id_zona               AS id_zona,\\n    TRIM(nombre_operacion)      AS nombre_operacion,\\n    TRIM(fecha_inicio)          AS fecha_inicio,\\n    TRIM(fecha_fin)             AS fecha_fin,\\n    TRIM(efectivos_desplegados) AS efectivos_desplegados,\\n    TRIM(vehiculos_utilizados)  AS vehiculos_utilizados,\\n    TRIM(duracion_dias)         AS duracion_dias,\\n    TRIM(costo_operacion)       AS costo_operacion,\\n    TRIM(resultado)             AS resultado,\\n    TRIM(detenidos)             AS detenidos,\\n    TRIM(area_km2)              AS area_km2,\\n    TRIM(incidentes)            AS incidentes,\\n    TRIM(observaciones)         AS observaciones\\nFROM oltp.tbl_operaciones\\nWHERE id_operacion IS NOT NULL AND id_operacion <> \\'\\'',",
+				"     format: 'query') ~> source1",
+				"source1 derive(nombre_operacion = initCap(trim(regexReplace(nombre_operacion, \"[\\\"'—]\", ' '))),",
+				"          efectivos_desplegados = case(     in(['cien','ciento'], lower(trim(efectivos_desplegados))), '100',     in(['doscientos'], lower(trim(efectivos_desplegados))), '200',     in(['trescientos'], lower(trim(efectivos_desplegados))), '300',     in(['cuatrocientos'], lower(trim(efectivos_desplegados))), '400',     in(['quinientos'], lower(trim(efectivos_desplegados))), '500',     regexReplace(trim(efectivos_desplegados), '[^0-9]', '') ),",
+				"          vehiculos_utilizados = case(     in(['veinte'], lower(trim(vehiculos_utilizados))), '20',     in(['nueve'], lower(trim(vehiculos_utilizados))), '9',     in(['siete'], lower(trim(vehiculos_utilizados))), '7',     in(['cinco'], lower(trim(vehiculos_utilizados))), '5',     in(['uno'], lower(trim(vehiculos_utilizados))), '1',     regexReplace(trim(vehiculos_utilizados), '[^0-9]', '') ),",
+				"          duracion_dias = case(\r",
+				"    in(['uno','un dia','un día'], lower(trim(duracion_dias))), '1',\r",
+				"    in(['dos','dos dias','dos días'], lower(trim(duracion_dias))), '2',\r",
+				"    in(['tres','tres dias','tres días'], lower(trim(duracion_dias))), '3',\r",
+				"    in(['cuatro','cuatro dias','cuatro días'], lower(trim(duracion_dias))), '4',\r",
+				"    in(['cinco','cinco dias','cinco días'], lower(trim(duracion_dias))), '5',\r",
+				"    in(['seis','seis dias','seis días'], lower(trim(duracion_dias))), '6',\r",
+				"    in(['siete','siete dias','siete días'], lower(trim(duracion_dias))), '7',\r",
+				"    in(['ocho','ocho dias','ocho días'], lower(trim(duracion_dias))), '8',\r",
+				"    in(['nueve','nueve dias','nueve días'], lower(trim(duracion_dias))), '9',\r",
+				"    in(['diez','diez dias','diez días'], lower(trim(duracion_dias))), '10',\r",
+				"    in(['once','once dias','once días'], lower(trim(duracion_dias))), '11',\r",
+				"    in(['doce','doce dias','doce días'], lower(trim(duracion_dias))), '12',\r",
+				"    in(['trece','trece dias','trece días'], lower(trim(duracion_dias))), '13',\r",
+				"    in(['catorce','catorce dias','catorce días'], lower(trim(duracion_dias))), '14',\r",
+				"    in(['quince','quince dias','quince días'], lower(trim(duracion_dias))), '15',\r",
+				"    in(['veinte','veinte dias','veinte días'], lower(trim(duracion_dias))), '20',\r",
+				"    in(['veinticinco','veinticinco dias'], lower(trim(duracion_dias))), '25',\r",
+				"    in(['treinta','treinta dias'], lower(trim(duracion_dias))), '30',\r",
+				"    in(['dieciseis','dieciséis','dieciseis dias','16 dias'], lower(trim(duracion_dias))), '16',\r",
+				"    in(['dieciocho','dieciocho dias','18 dias'], lower(trim(duracion_dias))), '18',\r",
+				"    startsWith(lower(trim(duracion_dias)), 'aprox'), \r",
+				"        regexReplace(replace(lower(trim(duracion_dias)), 'aprox.', ''), '[^0-9.]', ''),\r",
+				"    regexReplace(replace(lower(trim(duracion_dias)), ',', '.'), '[^0-9.]', '')\r",
+				"),",
+				"          costo_operacion = toDecimal(\r",
+				"    iif(\r",
+				"        regexMatch(regexReplace(trim(costo_operacion), '[^0-9.,]', ''), '^[0-9]+\\\\.[0-9]{3},[0-9]{2}$') ||\r",
+				"        regexMatch(regexReplace(trim(costo_operacion), '[^0-9.,]', ''), '^[0-9]+\\\\.[0-9]{3}$'),\r",
+				"        replace(\r",
+				"            replace(\r",
+				"                regexReplace(trim(costo_operacion), '[^0-9.,]', ''),\r",
+				"            '.', ''),\r",
+				"        ',', '.'),\r",
+				"        replace(\r",
+				"            regexReplace(\r",
+				"                regexReplace(trim(costo_operacion), '[^0-9.,]', ''),\r",
+				"            '^\\\\.', ''),\r",
+				"        ',', '')\r",
+				"    )\r",
+				"),",
+				"          moneda = case(     startsWith(lower(trim(costo_operacion)), 'usd') || endsWith(lower(trim(costo_operacion)), 'usd') || startsWith(lower(trim(costo_operacion)), '$us'), 'USD',     startsWith(lower(trim(costo_operacion)), 'bs') || endsWith(lower(trim(costo_operacion)), 'bs') || endsWith(lower(trim(costo_operacion)), 'bolivianos'), 'BOB',     'BOB' ),",
+				"          resultado = case(     in(['exitosa','exito','favorable','positivo','positive','bueno','objetivo cumplido','aceptable'], lower(trim(resultado))), 'Exitosa',     in(['fallida','sin exito','sin éxito','negativo'], lower(trim(resultado))), 'Fallida',     in(['parcial','parcialmente'], lower(trim(resultado))), 'Parcial',     in(['en proceso','en curso'], lower(trim(resultado))), 'En Proceso',     in(['incompleta'], lower(trim(resultado))), 'Incompleta',     in(['no reportado','s/n','por evaluar'], lower(trim(resultado))), 'No Reportado',     in(['regular'], lower(trim(resultado))), 'Regular',     initCap(trim(resultado)) ),",
+				"          detenidos = case(     in(['-','ninguno','ninguna','sin detenidos','cero'], lower(trim(detenidos))), '0',     regexReplace(trim(detenidos), '[^0-9]', '') ),",
+				"          area_km2 = toDecimal(     regexReplace(         regexReplace(trim(area_km2), '[Kk][Mm][²2]?', ''),     '[^0-9.]', '') ),",
+				"          incidentes = case(     in(['-','n/a','ninguno','ninguna','0 incidentes'], lower(trim(incidentes))), '0',     regexReplace(trim(incidentes), '[^0-9]', '') ),",
+				"          observaciones = iif(     isNull(trim(observaciones)) || trim(observaciones) == '' || in(['n/a','s/n','sin observaciones','sin obs.','sin obs'], lower(trim(observaciones))),     toString(null()),     lower(trim(observaciones)) ),",
+				"          fecha_inicio = coalesce(     toDate(fecha_inicio, 'yyyy-MM-dd'),     toDate(fecha_inicio, 'dd-MM-yyyy'),     toDate(fecha_inicio, 'MM-dd-yyyy'),     toDate(fecha_inicio, 'dd/MM/yyyy'),     toDate(fecha_inicio, 'yyyy/MM/dd'),     toDate(fecha_inicio, 'yyyyMMdd'),     toDate(fecha_inicio, 'MMMM dd, yyyy'),     toDate(fecha_inicio, \"dd 'de' MMMM 'de' yyyy\"),     toDate(fecha_inicio, 'dd/MMM/yyyy'),     toDate(fecha_inicio, 'MMMM dd yyyy') ),",
+				"          fecha_fin = coalesce(     toDate(fecha_inicio, 'yyyy-MM-dd'),     toDate(fecha_inicio, 'dd-MM-yyyy'),     toDate(fecha_inicio, 'MM-dd-yyyy'),     toDate(fecha_inicio, 'dd/MM/yyyy'),     toDate(fecha_inicio, 'yyyy/MM/dd'),     toDate(fecha_inicio, 'yyyyMMdd'),     toDate(fecha_inicio, 'MMMM dd, yyyy'),     toDate(fecha_inicio, \"dd 'de' MMMM 'de' yyyy\"),     toDate(fecha_inicio, 'dd/MMM/yyyy'),     toDate(fecha_inicio, 'MMMM dd yyyy') )) ~> derivedColumn1",
+				"derivedColumn1 derive(efectivos_desplegados = toInteger(efectivos_desplegados),",
+				"          vehiculos_utilizados = toInteger(vehiculos_utilizados),",
+				"          duracion_dias = toInteger(toDecimal(duracion_dias)),",
+				"          detenidos = iifNull(toInteger(detenidos), 0, toInteger(detenidos)),",
+				"          incidentes = iifNull(toInteger(incidentes), 0, toInteger(incidentes))) ~> derivedColumn2",
+				"derivedColumn2 derive(resultado = case(\r",
+				"    in(['exitosa','exitoso','exito','éxito','si exitosa','sí, exitosa','logrado','lograda','satisfactorio','muy bueno','completada','concluida','finalizada','operacion concluida','operación concluida'], lower(trim(resultado))), 'Exitosa',\r",
+				"    in(['fallida','no logrado','sin resultados'], lower(trim(resultado))), 'Fallida',\r",
+				"    in(['parcial','parcialmente exitoso','parcialmente logrado'], lower(trim(resultado))), 'Parcial',\r",
+				"    in(['en proceso','en curso'], lower(trim(resultado))), 'En Proceso',\r",
+				"    in(['incompleta'], lower(trim(resultado))), 'Incompleta',\r",
+				"    in(['regular'], lower(trim(resultado))), 'Regular',\r",
+				"    in(['no reportado','sin dato','s/n','por evaluar','-',''], lower(trim(resultado))), 'No Reportado',\r",
+				"    'No Reportado'\r",
+				")) ~> derivedColumn3"
+			]
+		}
+	}
+}

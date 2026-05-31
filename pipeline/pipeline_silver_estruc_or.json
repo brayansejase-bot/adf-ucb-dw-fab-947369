@@ -1,9 +1,9 @@
 {
-	"name": "pipeline_silver_efectivo",
+	"name": "pipeline_silver_estruc_or",
 	"properties": {
 		"activities": [
 			{
-				"name": "df_efectivos",
+				"name": "Data flow1",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataflow": {
-						"referenceName": "df_efectivos",
+						"referenceName": "df_estructura_organizacional",
 						"type": "DataFlowReference"
 					},
 					"compute": {

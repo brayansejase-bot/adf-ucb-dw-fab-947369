@@ -1,0 +1,85 @@
+{
+	"name": "df_estructura_organizacional",
+	"properties": {
+		"folder": {
+			"name": "silver"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "bronze_estructura_organizacional",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "silver_estructura_organizacional",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "derivedColumn1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id_estructura as integer,",
+				"          id_padre as integer,",
+				"          nivel as string,",
+				"          nombre as string,",
+				"          sigla as string,",
+				"          tipo as string,",
+				"          cobertura_departamentos as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'SELECT\\r\\n    id_estructura           AS id_estructura,\\r\\n    id_padre                AS id_padre,\\r\\n    TRIM(nivel)                   AS nivel,\\r\\n    TRIM(nombre)                  AS nombre,\\r\\n    TRIM(sigla)                   AS sigla,\\r\\n    TRIM(tipo)                    AS tipo,\\r\\n    TRIM(cobertura_departamentos) AS cobertura_departamentos\\r\\nFROM oltp.tbl_estructura_organizacional\\r\\nWHERE id_estructura IS NOT NULL AND id_estructura <> \\'\\'\\r\\n',",
+				"     format: 'query') ~> source1",
+				"source1 derive(id_estructura = toInteger(id_estructura),",
+				"          id_padre = iif(isNull(id_padre) || trim(toString(id_padre)) == 'NULL', toInteger(null()), toInteger(id_padre)),",
+				"          nivel = case(     lower(trim(nivel)) == 'rama', 'rama',     lower(trim(nivel)) == 'division', 'division',     lower(trim(nivel)) == 'brigada', 'brigada',     lower(trim(nivel)) ),",
+				"          nombre = trim(nombre),",
+				"          sigla = iif(isNull(sigla) || trim(toString(sigla)) == 'NULL', toString(null()), upper(trim(sigla))),",
+				"          tipo = iif(isNull(tipo) || trim(toString(tipo)) == 'NULL', toString(null()), initCap(trim(tipo))),",
+				"          cobertura_departamentos = iif(isNull(cobertura_departamentos) || trim(toString(cobertura_departamentos)) == 'NULL', toString(null()), trim(cobertura_departamentos))) ~> derivedColumn1",
+				"derivedColumn1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          id_estructura as integer,",
+				"          id_padre as integer,",
+				"          nivel as string,",
+				"          nombre as string,",
+				"          sigla as string,",
+				"          tipo as string,",
+				"          cobertura_departamentos as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          id_estructura,",
+				"          id_padre,",
+				"          nivel,",
+				"          nombre,",
+				"          sigla,",
+				"          tipo,",
+				"          cobertura_departamentos",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
